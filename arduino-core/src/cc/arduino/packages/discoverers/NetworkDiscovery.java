@@ -110,6 +110,66 @@ public class NetworkDiscovery implements Discovery, ServiceListener {
         port.getPrefs().put("ssh_upload", useSSH);
         port.getPrefs().put("tcp_check", checkTCP);
         port.getPrefs().put("auth_upload", useAuth);
+        
+        /*
+		 * The following lines are additions for OTAMonitor (processing.app.OTAMonitor) to work.
+		 * 
+		 * In here values for "OTA_Serial" and "OTA_Serial_port" properties are processed.
+		 * These values are embedded inside ArduinoOTA's MDNS response by the OTASerial library.
+		 * 
+		 * If OTASerial is not present on the board,
+		 *  the values for these properties are set to "no".
+		 * 
+		 * Possible values:
+		 * - "OTA_Serial": "yes", "no" otherwise;
+		 * - "OTA_Serial_port": port number (0 - 65535) or "no".
+		 * 
+		 * 
+		 * - AD3man
+		 */
+		String ota_ser = info.getPropertyString("OTA_Serial");
+		String ota_ser_port;
+		if (ota_ser == null || !ota_ser.equals("yes")) {
+			ota_ser = "no";
+			ota_ser_port = "no";
+		}else {
+			ota_ser_port = info.getPropertyString("OTA_Serial_port");
+			if (ota_ser_port == null) {
+				ota_ser = "no";
+				ota_ser_port = "no";
+			} else {
+				try {
+					// Can we parse ota_ser_port to an integer in the range of 0 to 65535? 
+					// If not, that isn't a port number.
+					int tmpPort = Integer.parseInt(ota_ser_port);
+					if (tmpPort < 0 || tmpPort > 65535) {
+						// Not a port number, therefore OTAMonitor wont work.
+						// We set both properties to "no"
+						ota_ser="no";
+						ota_ser_port = "no";
+					}
+				} catch (NumberFormatException e212) {
+					// Port number isn't even an integer.
+					ota_ser="no";
+					ota_ser_port = "no";
+				}	
+			}
+		}
+		//Here we store the values for the properties inside the board's preferences map
+		port.getPrefs().put("OTA_Serial", ota_ser);
+		port.getPrefs().put("OTA_Serial_port", ota_ser_port);
+		
+		
+		// For debug
+		/* 
+		for (String k : port.getPrefs().keySet()) {
+			System.out.println(k + ": " + port.getPrefs().get(k));
+		};
+		*/
+		 
+		// End of additions - AD3man.
+        
+        
       }
 
       String label = name + " at " + address;

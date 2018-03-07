@@ -31,6 +31,7 @@ package cc.arduino.packages;
 
 import processing.app.AbstractMonitor;
 import processing.app.NetworkMonitor;
+import processing.app.OTAMonitor;
 import processing.app.SerialMonitor;
 
 public class MonitorFactory {
@@ -40,7 +41,27 @@ public class MonitorFactory {
       if ("yes".equals(port.getPrefs().get("ssh_upload"))) {
         // the board is SSH capable
         return new NetworkMonitor(port); 
-      } else {
+        /*
+         * The following lines are additions for OTAMonitor (processing.app.OTAMonitor) to work.
+         * This is where OTAMonitor is instantiated.
+         * 
+         * Board property "OTA_Serial" is checked,
+         *  if value is equal to "yes" then OTASerial is present on the board.
+         * 
+         * "OTA_Serial" property is added to the board in
+         * 
+         *    cc.arduino.packages.discoverers.NetworkDiscovery.serviceResolved
+         * 
+         * where service discovery data is parsed.
+         * 
+         * 
+         * -AD3man
+         * */
+      } else if ("yes".equals(port.getPrefs().get("OTA_Serial"))) {
+        String debug_port = port.getPrefs().get("OTA_Serial_port");
+        return new OTAMonitor(port, Integer.parseInt(debug_port));
+      } // End of additions - AD3man
+      else {
         // SSH not supported, no monitor support
         return null;
       }
